@@ -151,7 +151,15 @@ clone() {
     # If there is no .gitignore yet, this will just clobber some comments
     git --git-dir "$dotfiles_dir" show HEAD:.gitignore > "$dotfiles_dir"/info/exclude 2>/dev/null
     git --git-dir "$dotfiles_dir" show HEAD:.gitattributes > "$dotfiles_dir"/info/attributes 2>/dev/null
-    git --git-dir "$dotfiles_dir" checkout
+    # Restore all files in working tree (meaning everything that would be overwritten by the clone checkout)
+    git --git-dir "$dotfiles_dir" reset HEAD -- .
+    # Checkout new branch and commit all these files
+    git --git-dir "$dotfiles_dir" checkout -b backup-before-clone
+    git --git-dir "$dotfiles_dir" add --update
+    git --git-dir "$dotfiles_dir" commit -m 'Add all existing files overwritten by dotfiles clone'
+    # Finally, checkout original branch in cloned dotfiles repo, overwriting files that were there before
+    git --git-dir "$dotfiles_dir" checkout - || error \
+        "failed to checkout dotfiles repo, fix the error and run: dotfiles checkout -"
 }
 # }}}
 
